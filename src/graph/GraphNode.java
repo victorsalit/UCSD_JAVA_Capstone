@@ -57,6 +57,14 @@ public class GraphNode {
 		neighbors.add(v);
 	}
 
+	public void removeNeighbor(int v){
+		neighbors.remove(v);
+	}
+	
+	public void removeIncomming(int v){
+		incomming.remove(v);
+	}
+	
 	public void addAllNeighbors(Set<Integer> newNeighbors){
 		neighbors.addAll(newNeighbors);
 	}
@@ -87,7 +95,7 @@ public class GraphNode {
 	}
 
 	public String toString(){
-		String text = "Vertex " + id
+		String text = "\nVertex " + id
 						+ ". It has " + neighbors.size() + " neighbors: " +
 		neighbors.toString() + " and " + incomming.size() + 
 		" incomming nodes: " + incomming.toString();;

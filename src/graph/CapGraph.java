@@ -76,6 +76,14 @@ public class CapGraph implements Graph {
 		return vertices.get(id);
 	}
 	
+	public void removeVertex(int id){
+		vertices.remove(id);
+		for (GraphNode v : vertices.values()){
+			v.removeIncomming(id);
+			v.removeNeighbor(id);
+		}
+	}
+	
 	/* (non-Javadoc)
 	 * @see graph.Graph#getEgonet(int)
 	 */
@@ -118,44 +126,59 @@ public class CapGraph implements Graph {
 	public List<Graph> getSCCs() {
 		// TODO Auto-generated method stub
 		
-//		Set<Integer> vertStack = vertices.keySet();
+		List<Graph> SCCs = new ArrayList<Graph>();
+		CapGraph scc1v;
+
 		
 		boolean second = false;
 		CapGraph g = new CapGraph(this.vertices); // <= copy of the graph!
 		System.out.println("input Graph: " + g.exportGraph().toString());
 		
-		List<Graph> SCCs = new ArrayList<Graph>();
-		Stack<Integer> vertStack = new Stack<Integer>();
-		Stack<Integer> finished;
-		for (int key : g.vertices.keySet()){
-			vertStack.push(key);
+		// Step 0: some vertices are SCCs
+		if (!g.vertices.isEmpty()){
+			for (GraphNode v : this.vertices.values()){
+				if (v.getNeighbors().isEmpty() || v.getIncomming().isEmpty()){
+					scc1v = new CapGraph();
+					scc1v.addVertex(v.getId());
+					scc1v.getVertex(v.getId()).addAllIncomming(v.getIncomming());
+					scc1v.getVertex(v.getId()).addAllNeighbors(v.getNeighbors());
+					g.removeVertex(v.getId());
+					SCCs.add(scc1v);
+					scc1v = null;
+				}
+			}
+		
+			Stack<Integer> vertStack = new Stack<Integer>();
+			Stack<Integer> finished;
+			for (int key : g.vertices.keySet()){
+				vertStack.push(key);
+			}
+			System.out.println("Stack vertices: " + vertStack.toString());
+			// step 1:
+			List<Graph> dummy = new ArrayList<Graph>();
+			finished = DFS(g,vertStack,dummy,second);
+			System.out.println("Stack finished: " + finished.toString());
+			
+			// step 2:
+			CapGraph gTransposed = g.transpose();
+			System.out.println("transposed Graph: " + gTransposed.exportGraph().toString());
+			
+			// step 3:
+			second = true;
+			finished = DFS(gTransposed,finished,SCCs,second);
+			System.out.println("Stack finished 2nd: " + finished.toString());
 		}
-		System.out.println("Stack vertices: " + vertStack.toString());
-		// step 1:
-		finished = DFS(g,vertStack,SCCs,second);
-		System.out.println("Stack finished: " + finished.toString());
-		
-		// step 2:
-		CapGraph gTransposed = g.transpose();
-		System.out.println("transposed Graph: " + gTransposed.exportGraph().toString());
-		
-		// step 3:
-		second = true;
-		finished = DFS(gTransposed,finished,SCCs,second);
-		System.out.println("Stack finished 2nd: " + finished.toString());
-		
 		return SCCs;
 	}
 
-	private Stack<Integer> DFS(CapGraph G, Stack<Integer> nodes, 
-			List<Graph> graphsList, boolean secondPass){
-		Stack<Integer> res = new Stack<Integer>();
+	private Stack<Integer> DFS(CapGraph G, Stack<Integer> nodes, List<Graph> graphsList, boolean secondPass){
+		Stack<Integer> finished = new Stack<Integer>();
 		Set<Integer> visited = new HashSet<Integer>();
 		while (!nodes.isEmpty()){
 			CapGraph scc = new CapGraph();
 			int currentV = nodes.pop();
 			if(!visited.contains(currentV)){
-				scc = DFSvisit(G,currentV,visited,res);
+				DFSvisit(G,currentV,visited,finished,scc);
 			}
 			if (secondPass){
 				if (!scc.vertices.isEmpty()){
@@ -163,22 +186,22 @@ public class CapGraph implements Graph {
 				}
 			}
 		}
-		return res;
+		return finished;
 	}
 	
-	private CapGraph DFSvisit(CapGraph g, int v, Set<Integer> visited, Stack<Integer> finished){
-		CapGraph res = new CapGraph();
+	private void DFSvisit(CapGraph g, int v, Set<Integer> visited, Stack<Integer> finished, CapGraph scc){
+		//CapGraph res = new CapGraph();
 		visited.add(v);
 		for (int n : g.getVertex(v).getNeighbors()){
 			if (!visited.contains(n)){
-				res = DFSvisit(g,n,visited,finished);
+				DFSvisit(g,n,visited,finished,scc);
 			}
-			finished.push(n);
-			res.addVertex(n);
-			res.getVertex(n).addAllNeighbors(g.getVertex(n).getIncomming());
-			res.getVertex(n).addAllIncomming(g.getVertex(n).getNeighbors());
 		}
-		return res;
+		finished.push(v);
+		scc.addVertex(v);
+		scc.getVertex(v).addAllNeighbors(g.getVertex(v).getIncomming());
+		scc.getVertex(v).addAllIncomming(g.getVertex(v).getNeighbors());
+		//return res;
 	}
 	
 	
@@ -246,9 +269,9 @@ public class CapGraph implements Graph {
       		
       	}
 */
-        Graph scc = new CapGraph();
-        GraphLoader.loadGraph(scc, "data/scc/test_3.txt");
-        List<Graph> graphSCCs = scc.getSCCs();
+        Graph scc2out = new CapGraph();
+        GraphLoader.loadGraph(scc2out, "data/scc/test_3.txt");
+        List<Graph> graphSCCs = scc2out.getSCCs();
         for(Graph graphi : graphSCCs) {
         	System.out.println(graphi.exportGraph().toString());
         }
